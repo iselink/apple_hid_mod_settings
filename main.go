@@ -80,7 +80,22 @@ func validateAccess() (bool, error) {
 
 func setValues(fnKeyMode *int, isoLayoutMode *int, swapFnLeftCtrlMode *int, swapOptCmdMode *int) {
 	if *fnKeyMode != -1 {
-		key, err := writeParam(fnParam, !(*fnKeyMode == 0))
+		var value string
+		switch *fnKeyMode {
+		case 0:
+			value = "0"
+			break
+		case 1:
+			value = "1"
+			break
+		case 2:
+			value = "2"
+			break
+		default:
+			println("-fn parameter have invalid number.")
+			return
+		}
+		key, err := writeParamByte(fnParam, []byte(value))
 		if err != nil {
 			println(err.Error())
 		}
@@ -113,14 +128,7 @@ func setValues(fnKeyMode *int, isoLayoutMode *int, swapFnLeftCtrlMode *int, swap
 
 }
 
-func writeParam(path string, value bool) (bool, error) {
-	var data []byte
-	if value {
-		data = []byte("1")
-	} else {
-		data = []byte("0")
-	}
-
+func writeParamByte(path string, value []byte) (bool, error) {
 	//get perms
 	lstat, err := os.Lstat(path)
 	if err != nil {
@@ -128,12 +136,22 @@ func writeParam(path string, value bool) (bool, error) {
 	}
 
 	//write
-	err = ioutil.WriteFile(path, data, lstat.Mode())
+	err = ioutil.WriteFile(path, value, lstat.Mode())
 	if err != nil {
 		return false, err
 	}
 
-	println(path, "=", string(data))
+	println(path, "=", string(value))
 
 	return true, nil
+}
+func writeParam(path string, value bool) (bool, error) {
+	var data []byte
+	if value {
+		data = []byte("1")
+	} else {
+		data = []byte("0")
+	}
+	r, err := writeParamByte(path, data)
+	return r, err
 }
